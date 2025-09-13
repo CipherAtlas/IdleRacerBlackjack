@@ -47,11 +47,11 @@ A slick single-file idle game. Race cars around multiple track types to earn gol
 ---
 # 🔧 Install & Run
 
-Requirements
+## Requirements
 
-Python 3.9+ (Windows/macOS/Linux)
-
-pygame (2.0+)
+- **Python 3.9+ (Windows/macOS/Linux)**
+  
+- **pygame (2.0+)**
 
 ## 1) Install pygame
 pip install pygame
