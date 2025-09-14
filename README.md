@@ -45,16 +45,35 @@ A slick single-file idle game. Race cars around multiple track types to earn gol
   - 60 FPS default; optional 120 FPS toggle
 
 ---
-# 🔧 Install & Run
+## 📦 Prerequisites
 
-## Requirements
+Before running this project, make sure you have:
 
-- **Python 3.9+ (Windows/macOS/Linux)**
-  
-- **pygame (2.0+)**
+- [Python 3.13+](https://www.python.org/downloads/)
+- [uv](https://github.com/astral-sh/uv) installed
 
-## 1) Install pygame
-pip install pygame
+### Install uv
 
-## 2) Run
-python main.py
+```bash
+pip install uv
+```
+
+Or download a standalone binary from the [uv releases page](https://github.com/astral-sh/uv/releases).
+
+---
+
+## ▶️ Running the Script
+
+1. Clone or download this repository.
+2. Open a terminal in the project directory.
+3. Run:
+
+```bash
+uv run main.py
+```
+
+✅ That’s it! `uv` will:
+
+- Create an isolated virtual environment automatically
+- Install all dependencies from `uv.lock`
+- Run the script in that environment

@@ -1,0 +1,9 @@
+[project]
+name = "IdleRacerBlackjack"
+version = "0.1.0"
+description = "Idle Racing Game With A BlackJack Sidegame"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "pygame>=2.6.1",
+]
