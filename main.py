@@ -159,6 +159,7 @@ class GameState:
         self.base_car_cost = 10; self.base_speed_cost = 20; self.base_payout_cost = 200
         self.base_auto_cost = 500; self.base_mult_cost = 2000; self.base_offline_cost = 2000
         self.cost_mul = 1.35
+        self.mult_cost_mul = 1.65
 
         self.base_ang_speed = 2.2; self.speed_scale_per_level = 0.18
         self._gps_last_gold = 0.0; self._gps_last_time = time.time(); self.gps_smoothed = 0.0
@@ -188,15 +189,24 @@ class GameState:
     def get_speed_cost(self): return int(self.base_speed_cost * (self.cost_mul ** (self.speed_level - 1)))
     def get_payout_cost(self): return int(self.base_payout_cost * (self.cost_mul ** (self.payout_level - 1)))
     def get_auto_cost(self): return int(self.base_auto_cost * (self.cost_mul ** (self.autoclicker_level)))
-    def get_mult_cost(self): return int(self.base_mult_cost * (self.cost_mul ** (self.gold_mult_level)))
+    def get_mult_cost(self):
+        # Faster-than-Ads escalation
+        return int(self.base_mult_cost * (self.mult_cost_mul ** (self.gold_mult_level)))
     def get_offline_cost(self): return int(self.base_offline_cost * (self.cost_mul ** (self.offline_level)))
 
     def gold_multiplier_total(self):
-        payout_bonus = (1 + 0.25*(self.payout_level - 1))
-        sponsor_bonus = (1 + 0.5*self.sponsor_level)
-        prestige_point_bonus = (1 + 0.05*self.prestige_points)
-        gold_mult_bonus = (2 ** self.gold_mult_level)
-        return payout_bonus * sponsor_bonus * prestige_point_bonus * gold_mult_bonus
+        # Existing bonuses
+        payout_bonus = (1 + 0.25 * (self.payout_level - 1))        # Track Ads
+        sponsor_bonus = (1 + 0.5 * self.sponsor_level)             # Prestige (sponsor) bonus
+        prestige_point_bonus = (1 + 0.05 * self.prestige_points)   # Achievement PP bonus
+
+        # NEW: Multiplier rework
+        # - Base scaling: 1.5^level (instead of 2^level)
+        # - Synergy: each Ads level makes Multiplier ~10% stronger
+        mult_synergy = 1 + 0.10 * self.payout_level
+        gold_mult_component = (1.5 ** self.gold_mult_level) * mult_synergy
+
+        return payout_bonus * sponsor_bonus * prestige_point_bonus * gold_mult_component
 
     def gold_per_lap(self): return 1.0 * self.gold_multiplier_total()
     def ang_speed(self): return self.base_ang_speed * (1 + self.speed_scale_per_level*(self.speed_level - 1))
@@ -224,7 +234,7 @@ class GameState:
         if self.gold >= cost: self.gold -= cost; self.autoclicker_level += 1; self.notify("Auto-Clicker upgraded 🤖")
     def upgrade_multiplier(self):
         cost = self.get_mult_cost()
-        if self.gold >= cost: self.gold -= cost; self.gold_mult_level += 1; self.notify("Gold Multiplier +1 (x2) ✨")
+        if self.gold >= cost: self.gold -= cost; self.gold_mult_level += 1; self.notify("Gold Multiplier +1 (x1.5 + 10%/Ads level) ✨")
     def upgrade_offline(self):
         cost = self.get_offline_cost()
         if self.gold >= cost: self.gold -= cost; self.offline_level += 1; self.notify("Offline Earnings boosted ⏱️")
@@ -524,9 +534,9 @@ class IdleScene(SceneBase):
         # Build named buttons for easier state handling
         self.btn_buy_car = Button((px, py, bw, bh), "", self.font, onclick=self.buy_car, key=pygame.K_1, tooltip="1: Buy another car.", accent=CYAN)
         self.btn_speed   = Button((px, py + gap, bw, bh), "", self.font, onclick=self.up_speed, key=pygame.K_2, tooltip="2: Increase speed.", accent=WHITE)
-        self.btn_payout  = Button((px, py + 2*gap, bw, bh), "", self.font, onclick=self.up_payout, key=pygame.K_3, tooltip="3: Gold per lap.", accent=YELLOW)
+        self.btn_payout  = Button((px, py + 2*gap, bw, bh), "", self.font, onclick=self.up_payout, key=pygame.K_3, tooltip="3: Increases gold per lap.", accent=YELLOW)
         self.btn_auto    = Button((px, py + 3*gap, bw, bh), "", self.font, onclick=self.up_auto, key=pygame.K_4, tooltip="4: Auto-Clicker.", accent=GREEN)
-        self.btn_mult    = Button((px, py + 4*gap, bw, bh), "", self.font, onclick=self.up_mult, key=pygame.K_5, tooltip="5: x2 per level.", accent=PURPLE)
+        self.btn_mult    = Button((px, py + 4*gap, bw, bh), "", self.font, onclick=self.up_mult, key=pygame.K_5, tooltip="5: x1.5/level + 10% per Ads lvl", accent=PURPLE)
         self.btn_offline = Button((px, py + 5*gap, bw, bh), "", self.font, onclick=self.up_offline, key=pygame.K_6, tooltip="6: Offline earnings.", accent=ORANGE)
         self.btn_track   = Button((px, py + 6*gap, bw, bh), "Change Track (T)", self.font, onclick=self.change_track, key=pygame.K_t, tooltip="Cycle tracks.", accent=CYAN)
         self.btn_bj      = Button((px, py + 7*gap, bw, bh), "BLACKJACK (B)", self.font, onclick=self.go_blackjack, key=pygame.K_b, tooltip="Unlocks at 1000 gold.", accent=WHITE)
@@ -606,7 +616,7 @@ class IdleScene(SceneBase):
         gs = self.app.state
         self.btn_buy_car.text = f"Buy Car ({fmt_num(gs.get_car_cost())})"; self.btn_speed.text = f"Upgrade Speed ({fmt_num(gs.get_speed_cost())})"
         self.btn_payout.text = f"Track Ads ({fmt_num(gs.get_payout_cost())})"; self.btn_auto.text = f"Auto-Clicker Lv{gs.autoclicker_level} ({fmt_num(gs.get_auto_cost())})"
-        self.btn_mult.text = f"Gold Mult x2^{gs.gold_mult_level} ({fmt_num(gs.get_mult_cost())})"; self.btn_offline.text = f"Offline Boost Lv{gs.offline_level} ({fmt_num(gs.get_offline_cost())})"
+        self.btn_mult.text = f"Gold Mult ×1.5^{gs.gold_mult_level} ({fmt_num(gs.get_mult_cost())})"; self.btn_offline.text = f"Offline Boost Lv{gs.offline_level} ({fmt_num(gs.get_offline_cost())})"
         self.btn_buy_car.enabled = gs.gold >= gs.get_car_cost(); self.btn_speed.enabled = gs.gold >= gs.get_speed_cost(); self.btn_payout.enabled = gs.gold >= gs.get_payout_cost()
         self.btn_auto.enabled = gs.gold >= gs.get_auto_cost(); self.btn_mult.enabled = gs.gold >= gs.get_mult_cost(); self.btn_offline.enabled = gs.gold >= gs.get_offline_cost()
         self.btn_bj.enabled = gs.blackjack_unlocked; self.btn_prest.enabled = gs.prestige_available()
