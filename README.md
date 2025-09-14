@@ -10,7 +10,7 @@ A slick single-file idle game. Race cars around multiple track types to earn gol
 
 ---
 
-## ✨ Highlights
+##  Highlights
 
 - **Enhanced Idle Mechanics**
   - Car variety (colors, sizes, speed variance)
@@ -45,7 +45,7 @@ A slick single-file idle game. Race cars around multiple track types to earn gol
   - 60 FPS default; optional 120 FPS toggle
 
 ---
-## 📦 Prerequisites
+##  Prerequisites
 
 Before running this project, make sure you have:
 
@@ -62,7 +62,7 @@ Or download a standalone binary from the [uv releases page](https://github.com/a
 
 ---
 
-## ▶️ Running the Script
+##  Running the Script
 
 1. Clone or download this repository.
 2. Open a terminal in the project directory.
@@ -72,8 +72,9 @@ Or download a standalone binary from the [uv releases page](https://github.com/a
 uv run main.py
 ```
 
-✅ That’s it! `uv` will:
+ That’s it! `uv` will:
 
 - Create an isolated virtual environment automatically
 - Install all dependencies from `uv.lock`
+
 - Run the script in that environment
